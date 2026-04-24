@@ -5,6 +5,7 @@ export type TokensLayer = {
   placeAt: (playerId: number, position: number) => void;
   animatePath: (playerId: number, path: number[], stepMs?: number) => Promise<void>;
   glideTo: (playerId: number, position: number, durationMs: number) => Promise<void>;
+  setActive: (playerId: number | null) => void;
 };
 
 export function createTokensLayer(colours: readonly string[]): TokensLayer {
@@ -55,7 +56,13 @@ export function createTokensLayer(colours: readonly string[]): TokensLayer {
     t.style.transition = '';
   }
 
-  return { element: layer, placeAt, animatePath, glideTo };
+  function setActive(playerId: number | null): void {
+    tokens.forEach((t, id) => {
+      t.classList.toggle('token--active', id === playerId);
+    });
+  }
+
+  return { element: layer, placeAt, animatePath, glideTo, setActive };
 }
 
 function clusterOffset(id: number, total: number): { dx: number; dy: number } {
