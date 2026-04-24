@@ -19,20 +19,90 @@ body {
   padding: 16px;
 }
 
-.board-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  width: min(100vmin, 900px);
+button {
+  font-family: inherit;
 }
 
 .title {
   margin: 0;
-  font-size: clamp(20px, 3vmin, 34px);
+  font-size: clamp(22px, 3vmin, 36px);
   color: #f0e0a0;
   letter-spacing: 0.04em;
   text-align: center;
+}
+
+/* ---------- Setup screen ---------- */
+
+.setup-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px 20px;
+}
+
+.setup-prompt {
+  font-size: 24px;
+  margin: 0;
+  color: #f0e0a0;
+}
+
+.setup-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(320px, 90vw);
+}
+
+.setup-button {
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  background: #2d2d2d;
+  color: #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+
+.setup-button:hover {
+  background: #3a3a3a;
+  border-color: #f0e0a0;
+}
+
+/* ---------- Game layout ---------- */
+
+.game-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: min(100vmin, 1100px);
+}
+
+.game-body {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+@media (max-width: 800px) {
+  .game-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---------- Board ---------- */
+
+.board-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-bottom: 13%;
 }
 
 .board {
@@ -44,7 +114,6 @@ body {
   position: relative;
   border: 8px solid #a0c8e8;
   border-radius: 10px;
-  overflow: hidden;
   background: #000;
 }
 
@@ -102,4 +171,132 @@ body {
 .snake-head {
   stroke: #111;
   stroke-width: 1.5;
+}
+
+/* ---------- Tokens ---------- */
+
+.tokens-layer {
+  position: absolute;
+  inset: 0;  /* child of .board — tokens align with grid cells 1:1 */
+  pointer-events: none;
+  overflow: visible;
+}
+
+.token {
+  position: absolute;
+  width: 5.5%;
+  height: 5.5%;
+  border-radius: 50%;
+  border: 2.5px solid rgba(0, 0, 0, 0.55);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transform: translate(
+    calc(-50% + var(--offset-x, 0px)),
+    calc(-50% + var(--offset-y, 0px))
+  );
+  transition: left 160ms ease-in-out, top 160ms ease-in-out;
+  z-index: 10;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: #262626;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  align-self: flex-start;
+}
+
+@media (max-width: 800px) {
+  .hud {
+    width: 100%;
+    align-self: auto;
+  }
+}
+
+.turn-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  min-height: 28px;
+}
+
+.turn-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.dice {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  background: #fafafa;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 -4px 6px rgba(0, 0, 0, 0.08),
+    0 3px 7px rgba(0, 0, 0, 0.45);
+  align-self: center;
+  transition: transform 180ms ease;
+}
+
+.dice.dice-rolling {
+  animation: dice-shake 140ms infinite;
+}
+
+.dice.dice-pop {
+  transform: scale(1.1);
+}
+
+@keyframes dice-shake {
+  0%   { transform: rotate(0deg)  translate(0,   0); }
+  25%  { transform: rotate(-6deg) translate(-1px, 1px); }
+  50%  { transform: rotate(0deg)  translate(1px, -1px); }
+  75%  { transform: rotate(6deg)  translate(-1px, 0); }
+  100% { transform: rotate(0deg)  translate(0,   0); }
+}
+
+.dice-dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.roll-button {
+  padding: 14px 18px;
+  font-size: 18px;
+  font-weight: 600;
+  background: #f0e0a0;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.roll-button:hover:not(:disabled) {
+  background: #f8eab5;
+}
+
+.roll-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.hud-message {
+  min-height: 20px;
+  color: #f0e0a0;
+  font-style: italic;
+  text-align: center;
+  font-size: 15px;
 }
