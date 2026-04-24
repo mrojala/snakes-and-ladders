@@ -177,7 +177,7 @@ button {
 
 .tokens-layer {
   position: absolute;
-  inset: 8px;  /* match .board's border */
+  inset: 0;  /* child of .board — tokens align with grid cells 1:1 */
   pointer-events: none;
   overflow: visible;
 }
