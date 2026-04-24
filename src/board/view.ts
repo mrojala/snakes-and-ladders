@@ -93,66 +93,19 @@ function sampleAtSpacing(pts: readonly Pt[], spacing: number): Array<{ p: Pt; tx
   return out;
 }
 
-// Walk the waypoint polyline at fine steps and add a tapered sinusoidal
-// offset perpendicular to the local tangent. Head/tail land exactly on the
-// first/last waypoint; the body undulates between them. When the snake has
-// no explicit path, `waypoints` is just [head, tail] and this produces the
-// classic sinusoidal snake.
-function undulateAlongPath(waypoints: Pt[]): Pt[] {
-  if (waypoints.length < 2) return [...waypoints];
-  // Total arc length.
-  const segs: Array<{ a: Pt; b: Pt; len: number; ux: number; uy: number; start: number }> = [];
-  let total = 0;
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const a = waypoints[i];
-    const b = waypoints[i + 1];
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len = Math.hypot(dx, dy);
-    if (len === 0) continue;
-    segs.push({ a, b, len, ux: dx / len, uy: dy / len, start: total });
-    total += len;
-  }
-  if (total === 0) return [...waypoints];
-
-  // Fewer waves, more amplitude when there's only a head/tail (no explicit
-  // path). Paths with many waypoints already bend plenty, so undulation is
-  // subtle there — a light wavy skin, not a second set of turns.
-  const hasPath = waypoints.length > 2;
-  const waypointCount = waypoints.length;
-  const waves = hasPath
-    ? Math.max(1, Math.round(total / 180))
-    : Math.max(3, Math.round(total / 75));
-  const amplitude = hasPath
-    ? Math.min(9, total / (22 * Math.max(1, waypointCount - 2)))
-    : Math.min(50, total * 0.18);
-
-  const step = 5;
-  const n = Math.max(20, Math.ceil(total / step));
-  const out: Pt[] = [];
-  let segIdx = 0;
-
-  for (let i = 0; i <= n; i++) {
-    const dist = (i / n) * total;
-    while (segIdx < segs.length - 1 && dist > segs[segIdx].start + segs[segIdx].len) {
-      segIdx++;
-    }
-    const seg = segs[segIdx];
-    const localDist = dist - seg.start;
-    const baseX = seg.a.x + seg.ux * localDist;
-    const baseY = seg.a.y + seg.uy * localDist;
-
-    // Perpendicular to the current segment.
-    const perpX = -seg.uy;
-    const perpY = seg.ux;
-
-    const t = dist / total;
-    const taper = Math.sin(t * Math.PI); // 0 at endpoints, 1 in the middle
-    const off = amplitude * taper * Math.sin(t * waves * Math.PI);
-
-    out.push({ x: baseX + perpX * off, y: baseY + perpY * off });
-  }
-  return out;
+// When a snake has no explicit path, bow the midpoint perpendicular to the
+// head→tail line so the body has a gentle organic curve. Returns three
+// waypoints (head, bowed midpoint, tail) for the smooth-bezier renderer.
+function bowedWaypoints(head: Pt, tail: Pt): Pt[] {
+  const dx = tail.x - head.x;
+  const dy = tail.y - head.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const px = -dy / len;
+  const py = dx / len;
+  const mid = { x: (head.x + tail.x) / 2, y: (head.y + tail.y) / 2 };
+  const bow = Math.min(38, len * 0.18);
+  const sign = head.x < tail.x ? 1 : -1;
+  return [head, { x: mid.x + px * bow * sign, y: mid.y + py * bow * sign }, tail];
 }
 
 function renderLadder(baseSquare: number, topSquare: number): SVGGElement {
@@ -227,12 +180,9 @@ function renderSnake(
   const waypoints: Pt[] =
     pathSquares && pathSquares.length >= 2
       ? pathSquares.map((n) => pixelCentre(n))
-      : [head, tail];
+      : bowedWaypoints(head, tail);
 
-  // Apply continuous tapered sinusoidal undulation along the waypoint polyline
-  // so the body flows instead of having straight segments between waypoints.
-  const curve = undulateAlongPath(waypoints);
-  const d = smoothPath(curve);
+  const d = smoothPath(waypoints);
 
   const bodyOutline = document.createElementNS(SVG_NS, 'path');
   bodyOutline.setAttribute('d', d);
@@ -245,10 +195,9 @@ function renderSnake(
   body.setAttribute('stroke', colour);
   g.appendChild(body);
 
-  // Cross-stripes distributed along the undulated curve at regular arc-length
-  // intervals so they follow the bends, not the straight segments.
+  // Cross-stripes at regular arc-length intervals along the waypoint polyline.
   const pattern = STRIPE_PATTERNS[index % STRIPE_PATTERNS.length];
-  for (const s of sampleAtSpacing(curve, pattern.spacing)) {
+  for (const s of sampleAtSpacing(waypoints, pattern.spacing)) {
     const perpX = -s.ty;
     const perpY = s.tx;
     const stripe = document.createElementNS(SVG_NS, 'line');
@@ -262,9 +211,8 @@ function renderSnake(
     g.appendChild(stripe);
   }
 
-  // Head orientation from the first segment of the undulated curve so the
-  // head leans into the body even when the snake starts mid-bend.
-  const firstNext = curve[1] ?? tail;
+  // Head orientation from the first segment's tangent.
+  const firstNext = waypoints[1] ?? tail;
   const bodyDx = firstNext.x - head.x;
   const bodyDy = firstNext.y - head.y;
   const bodyLen = Math.hypot(bodyDx, bodyDy) || 1;
