@@ -41,6 +41,13 @@ button {
   padding: 40px 20px;
 }
 
+@media (max-width: 640px) {
+  .setup-wrapper {
+    gap: 18px;
+    padding: 20px 12px;
+  }
+}
+
 .setup-prompt {
   font-size: 24px;
   margin: 0;
@@ -114,6 +121,15 @@ button {
   border-radius: 14px;
   min-height: 200px;
   transition: transform 150ms, border-color 150ms, background 150ms;
+}
+
+@media (max-width: 640px) {
+  .player-card {
+    gap: 8px;
+    padding: 12px 8px 10px;
+    min-height: 0;
+    border-radius: 12px;
+  }
 }
 
 .player-card--active {

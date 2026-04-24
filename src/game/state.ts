@@ -24,13 +24,21 @@ export const PLAYER_COLOURS = ['#f2c832', '#7c4fbd', '#2b78e6', '#e03a3a'] as co
 
 export const COLOUR_PALETTE = [
   '#e03a3a', // red
-  '#2b78e6', // blue
-  '#4aa53a', // green
-  '#f2c832', // yellow
-  '#e066c3', // pink
-  '#7c4fbd', // purple
   '#f58f3a', // orange
+  '#f2c832', // yellow
+  '#4aa53a', // green
   '#34c8b8', // teal
+  '#2b78e6', // blue
+  '#7c4fbd', // purple
+  '#e066c3', // magenta
+  '#8a1a1a', // dark red
+  '#9a6033', // brown
+  '#b4b02a', // olive
+  '#1e5a20', // dark green
+  '#0e3a78', // navy
+  '#4a2478', // indigo
+  '#f8a0b8', // light pink
+  '#e8e8e8', // white
 ] as const;
 
 export function newGame(choice: GameChoice): GameState {
