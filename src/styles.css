@@ -267,17 +267,10 @@ button {
 
 .game-body {
   display: flex;
-  flex-direction: row;
-  gap: 20px;
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
-  align-items: flex-start;
-}
-
-@media (max-width: 900px) {
-  .game-body {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  align-items: stretch;
 }
 
 .board-column {
@@ -296,7 +289,14 @@ button {
 
 .board-frame {
   position: relative;
-  padding-bottom: 13%;
+  padding-bottom: 11%;
+  width: 100%;
+  /* Cap the board width so title + board + gap + HUD fit in the viewport
+     height without a scrollbar. Board-frame height is ~1.11 × its width
+     because of padding-bottom:11%, so width ≤ (100vh − overhead) / 1.11. */
+  max-width: calc((100vh - 200px) / 1.11);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .board {
@@ -472,46 +472,55 @@ button {
 /* ---------- HUD ---------- */
 
 .hud {
-  width: 260px;
+  width: 280px;
+  max-width: 100%;
+  align-self: flex-end;          /* dice + roll bottom-right of the column */
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
   background: #262626;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  align-self: flex-start;
 }
 
-@media (max-width: 900px) {
-  .hud {
-    width: 100%;
-    max-width: 440px;
-    align-self: center;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-  }
-  .turn-label { flex: 1 1 100%; justify-content: center; }
-  .hud-message { flex: 1 1 100%; }
-}
-
-.turn-label {
+.hud-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  min-height: 28px;
+  justify-content: center;
+  gap: 18px;
 }
 
-.turn-dot {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.5);
-  flex-shrink: 0;
+.turn-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.turn-pawn {
+  width: 52px;
+  height: 68px;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+
+.turn-pawn .token-pawn {
+  width: 100%;
+  height: 100%;
+}
+
+.turn-name {
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  background: rgba(20, 20, 20, 0.88);
+  color: #fff;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .dice {
@@ -523,7 +532,6 @@ button {
   box-shadow:
     inset 0 -4px 6px rgba(0, 0, 0, 0.08),
     0 3px 7px rgba(0, 0, 0, 0.45);
-  align-self: center;
   transition: transform 180ms ease;
 }
 

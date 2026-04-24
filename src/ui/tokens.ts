@@ -37,10 +37,11 @@ export function createTokensLayer(specs: readonly TokenSpec[]): TokensLayer {
   function placeAt(playerId: number, position: number): void {
     const { root } = tokens[playerId];
     if (position === 0) {
+      // Cluster in the left half of the area below the board.
       const slots = specs.length;
-      const gap = 80 / Math.max(slots, 1);
-      root.style.left = `${10 + playerId * gap + gap / 2}%`;
-      root.style.top = `112%`;
+      const slotWidth = 48 / Math.max(slots, 1);
+      root.style.left = `${4 + playerId * slotWidth + slotWidth / 2}%`;
+      root.style.top = `106%`;
       root.style.setProperty('--offset-x', `0px`);
       root.style.setProperty('--offset-y', `0px`);
     } else {
@@ -91,7 +92,7 @@ function clusterOffset(id: number, total: number): { dx: number; dy: number } {
   return { dx: Math.cos(angle) * r, dy: Math.sin(angle) * r };
 }
 
-function createPawnSvg(): SVGSVGElement {
+export function createPawnSvg(): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 'token-pawn');
   svg.setAttribute('viewBox', '0 0 60 80');
