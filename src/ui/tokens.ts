@@ -15,9 +15,6 @@ export function createTokensLayer(colours: readonly string[]): TokensLayer {
     t.className = 'token';
     t.style.backgroundColor = colour;
     t.dataset.playerId = String(id);
-    const { dx, dy } = clusterOffset(id, colours.length);
-    t.style.setProperty('--offset-x', `${dx}px`);
-    t.style.setProperty('--offset-y', `${dy}px`);
     layer.appendChild(t);
     return t;
   });
@@ -30,10 +27,15 @@ export function createTokensLayer(colours: readonly string[]): TokensLayer {
       const gap = 80 / Math.max(slots, 1);
       t.style.left = `${10 + playerId * gap + gap / 2}%`;
       t.style.top = `108%`;
+      t.style.setProperty('--offset-x', `0px`);
+      t.style.setProperty('--offset-y', `0px`);
     } else {
       const { xPct, yPct } = boardPercent(position);
       t.style.left = `${xPct}%`;
       t.style.top = `${yPct}%`;
+      const { dx, dy } = clusterOffset(playerId, colours.length);
+      t.style.setProperty('--offset-x', `${dx}px`);
+      t.style.setProperty('--offset-y', `${dy}px`);
     }
   }
 

@@ -27,7 +27,8 @@ export function mountGame(container: HTMLElement, playerCount: PlayerCount): voi
   boardFrame.className = 'board-frame';
   const boardEl = createBoard();
   const tokens = createTokensLayer(state.players.map((p) => p.colour));
-  boardFrame.append(boardEl, tokens.element);
+  boardEl.appendChild(tokens.element);
+  boardFrame.appendChild(boardEl);
 
   for (const p of state.players) tokens.placeAt(p.id, p.position);
 
