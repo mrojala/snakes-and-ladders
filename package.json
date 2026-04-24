@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "playwright": "^1.59.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.7"
   }
