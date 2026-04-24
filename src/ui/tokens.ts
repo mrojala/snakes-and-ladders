@@ -4,6 +4,7 @@ export type TokensLayer = {
   element: HTMLDivElement;
   placeAt: (playerId: number, position: number) => void;
   animatePath: (playerId: number, path: number[], stepMs?: number) => Promise<void>;
+  glideTo: (playerId: number, position: number, durationMs: number) => Promise<void>;
 };
 
 export function createTokensLayer(colours: readonly string[]): TokensLayer {
@@ -46,7 +47,15 @@ export function createTokensLayer(colours: readonly string[]): TokensLayer {
     }
   }
 
-  return { element: layer, placeAt, animatePath };
+  async function glideTo(playerId: number, position: number, durationMs: number): Promise<void> {
+    const t = tokens[playerId];
+    t.style.transition = `left ${durationMs}ms ease-in-out, top ${durationMs}ms ease-in-out`;
+    placeAt(playerId, position);
+    await wait(durationMs);
+    t.style.transition = '';
+  }
+
+  return { element: layer, placeAt, animatePath, glideTo };
 }
 
 function clusterOffset(id: number, total: number): { dx: number; dy: number } {

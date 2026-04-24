@@ -1,27 +1,39 @@
 import { createBoard } from '../board/view';
 import { applyRoll, rollDie } from '../game/rules';
-import { newGame, type GameState, type PlayerCount } from '../game/state';
+import { newGame, type GameChoice, type GameState } from '../game/state';
 import { fi } from '../i18n';
 import { createHud } from './hud';
 import { createTokensLayer } from './tokens';
+import { createWinOverlay } from './winScreen';
 
-const STEP_MS = 180;
-const CPU_THINK_MS = 700;
+// Quick-mode knobs for Playwright runs (?fast in the URL) — everything shortens
+// but the logic stays identical so regression tests and kids both see the same
+// flow.
+const fast = new URLSearchParams(location.search).has('fast');
+const STEP_MS = fast ? 40 : 180;
+const GLIDE_MS = fast ? 160 : 600;
+const CPU_THINK_MS = fast ? 120 : 700;
+const TOO_HIGH_MS = fast ? 250 : 900;
+const LANDED_MSG_MS = fast ? 250 : 700;
 
-export function mountGame(container: HTMLElement, playerCount: PlayerCount): void {
+export function mountGame(container: HTMLElement, choice: GameChoice, onRestart: () => void): void {
   container.innerHTML = '';
-  let state: GameState = newGame(playerCount);
+  let state: GameState = newGame(choice);
   let busy = false;
+  let ended = false;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'game-wrapper';
 
+  const body = document.createElement('div');
+  body.className = 'game-body';
+
+  const boardColumn = document.createElement('div');
+  boardColumn.className = 'board-column';
+
   const title = document.createElement('h1');
   title.className = 'title';
   title.textContent = fi.title;
-
-  const body = document.createElement('div');
-  body.className = 'game-body';
 
   const boardFrame = document.createElement('div');
   boardFrame.className = 'board-frame';
@@ -33,11 +45,12 @@ export function mountGame(container: HTMLElement, playerCount: PlayerCount): voi
   for (const p of state.players) tokens.placeAt(p.id, p.position);
 
   const hud = createHud(() => {
-    if (!busy) void takeTurn();
+    if (!busy && !ended) void takeTurn();
   });
 
-  body.append(boardFrame, hud.element);
-  wrapper.append(title, body);
+  boardColumn.append(title, boardFrame);
+  body.append(boardColumn, hud.element);
+  wrapper.append(body);
   container.appendChild(wrapper);
 
   refreshHud();
@@ -60,13 +73,32 @@ export function mountGame(container: HTMLElement, playerCount: PlayerCount): voi
         await tokens.animatePath(ev.playerId, path, STEP_MS);
       } else if (ev.type === 'stayed') {
         hud.showMessage(fi.tooHigh);
-        await wait(900);
+        await wait(TOO_HIGH_MS);
+        hud.showMessage(null);
+      } else if (ev.type === 'slid') {
+        hud.showMessage(fi.snakeLanded);
+        await tokens.glideTo(ev.playerId, ev.to, GLIDE_MS);
+        await wait(LANDED_MSG_MS);
+        hud.showMessage(null);
+      } else if (ev.type === 'climbed') {
+        hud.showMessage(fi.ladderLanded);
+        await tokens.glideTo(ev.playerId, ev.to, GLIDE_MS);
+        await wait(LANDED_MSG_MS);
         hud.showMessage(null);
       }
     }
 
     state = nextState;
     busy = false;
+
+    if (state.phase === 'won' && state.winner) {
+      ended = true;
+      hud.update(state.winner, false);
+      const overlay = createWinOverlay(state.winner, onRestart);
+      wrapper.appendChild(overlay);
+      return;
+    }
+
     refreshHud();
     scheduleCpuIfNeeded();
   }
@@ -78,10 +110,11 @@ export function mountGame(container: HTMLElement, playerCount: PlayerCount): voi
   }
 
   function scheduleCpuIfNeeded(): void {
+    if (ended) return;
     const current = state.players[state.currentPlayerIndex];
     if (!current.isCpu || busy) return;
     setTimeout(() => {
-      if (!busy) void takeTurn();
+      if (!busy && !ended) void takeTurn();
     }, CPU_THINK_MS);
   }
 }

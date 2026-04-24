@@ -5,6 +5,7 @@
 //     click:<selector>
 //     text:<substring>     (clicks first element whose text contains substring)
 //     wait:<ms>
+//     waitFor:<selector>   (waits up to 120s for selector to appear)
 //     rolls:<n>            (clicks "Heitä noppaa" n times, waiting between each)
 
 import { chromium } from 'playwright';
@@ -23,6 +24,8 @@ for (const action of actions) {
     await page.getByText(txt, { exact: false }).first().click();
   } else if (action.startsWith('wait:')) {
     await page.waitForTimeout(Number(action.slice('wait:'.length)));
+  } else if (action.startsWith('waitFor:')) {
+    await page.waitForSelector(action.slice('waitFor:'.length), { timeout: 120_000 });
   } else if (action.startsWith('rolls:')) {
     const n = Number(action.slice('rolls:'.length));
     for (let i = 0; i < n; i++) {
