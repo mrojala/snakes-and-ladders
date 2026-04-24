@@ -1,0 +1,15 @@
+export const fi = {
+  title: 'Käärmeet ja tikapuut',
+  setupPrompt: 'Montako pelaajaa?',
+  onePlayerVsCpu: '1 pelaaja (vastaan tietokone)',
+  twoPlayers: '2 pelaajaa',
+  threePlayers: '3 pelaajaa',
+  fourPlayers: '4 pelaajaa',
+  rollDice: 'Heitä noppaa',
+  turnLabel: 'Vuorossa',
+  computerName: 'Tietokone',
+  playerName: (n: number) => `Pelaaja ${n}`,
+  playAgain: 'Pelaa uudestaan',
+  winner: 'Voittaja',
+  tooHigh: 'Liian korkea! Pysyt paikallasi',
+} as const;
