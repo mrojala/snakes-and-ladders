@@ -71,13 +71,25 @@ button {
   border-color: #f0e0a0;
 }
 
+.setup-button--auto {
+  margin-top: 6px;
+  background: #2a3a4a;
+  border-color: rgba(160, 200, 232, 0.4);
+  color: #d8eaf7;
+}
+
+.setup-button--auto:hover {
+  background: #34485a;
+  border-color: #a0c8e8;
+}
+
 /* ---------- Game layout ---------- */
 
 .game-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
   width: min(100vmin, 1100px);
 }
 
@@ -96,12 +108,22 @@ button {
   }
 }
 
+.board-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.board-column .title {
+  align-self: stretch;
+}
+
 /* ---------- Board ---------- */
 
 .board-frame {
   position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
   padding-bottom: 13%;
 }
 
@@ -299,4 +321,72 @@ button {
   font-style: italic;
   text-align: center;
   font-size: 15px;
+}
+
+/* ---------- Win screen ---------- */
+
+.win-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  animation: win-fade-in 280ms ease-out;
+}
+
+@keyframes win-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.win-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 36px;
+  background: #262626;
+  border: 2px solid #f0e0a0;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  animation: win-pop-in 320ms ease-out;
+}
+
+@keyframes win-pop-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.win-dot {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.win-title {
+  margin: 0;
+  color: #f0e0a0;
+  font-size: clamp(22px, 3vmin, 30px);
+  text-align: center;
+}
+
+.play-again-button {
+  padding: 14px 22px;
+  font-size: 18px;
+  font-weight: 600;
+  background: #f0e0a0;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.play-again-button:hover {
+  background: #f8eab5;
 }

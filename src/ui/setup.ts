@@ -1,7 +1,9 @@
 import { fi } from '../i18n';
-import type { PlayerCount } from '../game/state';
+import type { GameChoice } from '../game/state';
 
-export function mountSetup(container: HTMLElement, onStart: (n: PlayerCount) => void): void {
+type Option = { label: string; choice: GameChoice; modifier?: string };
+
+export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice) => void): void {
   container.innerHTML = '';
 
   const wrapper = document.createElement('div');
@@ -18,18 +20,20 @@ export function mountSetup(container: HTMLElement, onStart: (n: PlayerCount) => 
   const buttons = document.createElement('div');
   buttons.className = 'setup-buttons';
 
-  const options: Array<{ count: PlayerCount; label: string }> = [
-    { count: 1, label: fi.onePlayerVsCpu },
-    { count: 2, label: fi.twoPlayers },
-    { count: 3, label: fi.threePlayers },
-    { count: 4, label: fi.fourPlayers },
+  const options: Option[] = [
+    { label: fi.onePlayerVsCpu, choice: { mode: 'players', count: 1 } },
+    { label: fi.twoPlayers,     choice: { mode: 'players', count: 2 } },
+    { label: fi.threePlayers,   choice: { mode: 'players', count: 3 } },
+    { label: fi.fourPlayers,    choice: { mode: 'players', count: 4 } },
+    { label: fi.aiVsAi,         choice: { mode: 'auto' }, modifier: 'setup-button--auto' },
   ];
 
   for (const opt of options) {
     const btn = document.createElement('button');
-    btn.className = 'setup-button';
+    btn.type = 'button';
+    btn.className = opt.modifier ? `setup-button ${opt.modifier}` : 'setup-button';
     btn.textContent = opt.label;
-    btn.addEventListener('click', () => onStart(opt.count));
+    btn.addEventListener('click', () => onStart(opt.choice));
     buttons.appendChild(btn);
   }
 
