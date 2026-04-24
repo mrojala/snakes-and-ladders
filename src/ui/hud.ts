@@ -1,4 +1,3 @@
-import { fi } from '../i18n';
 import type { Player } from '../game/state';
 import { createDice } from './dice';
 import { createPawnSvg } from './tokens';
@@ -28,28 +27,37 @@ export function createHud(onRoll: () => void): Hud {
   turn.append(turnPawn, turnName);
 
   const dice = createDice();
-
-  const rollBtn = document.createElement('button');
-  rollBtn.className = 'roll-button';
-  rollBtn.type = 'button';
-  rollBtn.textContent = fi.rollDice;
-  rollBtn.addEventListener('click', () => onRoll());
+  dice.element.classList.add('dice--clickable');
+  dice.element.setAttribute('role', 'button');
+  dice.element.setAttribute('tabindex', '0');
+  let canRoll = false;
+  const tryRoll = () => {
+    if (canRoll) onRoll();
+  };
+  dice.element.addEventListener('click', tryRoll);
+  dice.element.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      tryRoll();
+    }
+  });
 
   const message = document.createElement('div');
   message.className = 'hud-message';
 
   const row = document.createElement('div');
   row.className = 'hud-row';
-  row.append(turn, dice.element, rollBtn);
+  row.append(turn, dice.element);
 
   el.append(row, message);
 
   return {
     element: el,
-    update(current, canRoll) {
+    update(current, rollable) {
       turnPawn.style.setProperty('--token-colour', current.colour);
       turnName.textContent = current.name;
-      rollBtn.disabled = !canRoll;
+      canRoll = rollable;
+      dice.element.classList.toggle('dice--ready', rollable);
     },
     animateDice: dice.animate,
     setDice: dice.setValue,

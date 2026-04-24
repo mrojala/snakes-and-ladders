@@ -7,6 +7,7 @@ export const fi = {
   addPlayer: '+ Lisää pelaaja',
   aiToggle: 'Tekoäly',
   removePlayer: 'Poista pelaaja',
+  chooseColour: 'Valitse väri',
   startGame: 'Aloita peli',
   rollDice: 'Heitä noppaa',
   turnLabel: 'Vuorossa',
@@ -15,6 +16,6 @@ export const fi = {
   bouncedBack: 'Takaisin päin!',
   snakeLanded: 'Käärme! Liu’utaan alas',
   ladderLanded: 'Tikapuut! Kiivetään ylös',
-  defaultPlayerNames: ['Anna', 'Markus', 'Aino', 'Sonja'] as const,
+  defaultPlayerNames: ['Anna', 'Aino', 'Markus', 'Sonja'] as const,
   aiPrefix: 'AI-',
 } as const;

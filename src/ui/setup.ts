@@ -1,13 +1,25 @@
 import { fi } from '../i18n';
-import { PLAYER_COLOURS, type GameChoice } from '../game/state';
+import { COLOUR_PALETTE, PLAYER_COLOURS, type GameChoice } from '../game/state';
 
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 2;
 
-type Slot = { enabled: boolean; isAi: boolean; name: string };
+type Slot = {
+  enabled: boolean;
+  isAi: boolean;
+  name: string;
+  colour: string;
+  paletteOpen: boolean;
+};
 
 function defaultSlot(i: number, enabled: boolean): Slot {
-  return { enabled, isAi: false, name: fi.defaultPlayerNames[i] };
+  return {
+    enabled,
+    isAi: false,
+    name: fi.defaultPlayerNames[i],
+    colour: PLAYER_COLOURS[i],
+    paletteOpen: false,
+  };
 }
 
 function humanize(aiName: string): string {
@@ -59,7 +71,7 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
   startBtn.addEventListener('click', () => {
     const players = slots
       .filter((s) => s.enabled)
-      .map((s) => ({ name: s.name.trim() || ' ', isAi: s.isAi }));
+      .map((s) => ({ name: s.name.trim() || ' ', isAi: s.isAi, colour: s.colour }));
     onStart({ players });
   });
 
@@ -79,6 +91,8 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
         slot.isAi = true;
         slot.name = fi.aiPrefix + fi.defaultPlayerNames[i];
       }
+      slot.colour = PLAYER_COLOURS[i];
+      slot.paletteOpen = false;
     });
     render();
   }
@@ -97,7 +111,7 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
   function renderActiveCard(idx: number, slot: Slot, enabledCount: number): HTMLDivElement {
     const card = document.createElement('div');
     card.className = 'player-card player-card--active';
-    card.style.setProperty('--slot-colour', PLAYER_COLOURS[idx]);
+    card.style.setProperty('--slot-colour', slot.colour);
 
     if (enabledCount > MIN_PLAYERS) {
       const remove = document.createElement('button');
@@ -112,9 +126,19 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
       card.appendChild(remove);
     }
 
-    const token = document.createElement('div');
+    const token = document.createElement('button');
+    token.type = 'button';
     token.className = 'player-card-token';
+    token.setAttribute('aria-label', fi.chooseColour);
+    token.addEventListener('click', () => {
+      slot.paletteOpen = !slot.paletteOpen;
+      render();
+    });
     card.appendChild(token);
+
+    if (slot.paletteOpen) {
+      card.appendChild(renderPalette(slot));
+    }
 
     const nameInput = document.createElement('input');
     nameInput.className = 'player-card-name';
@@ -155,6 +179,25 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
     return card;
   }
 
+  function renderPalette(slot: Slot): HTMLDivElement {
+    const palette = document.createElement('div');
+    palette.className = 'colour-palette';
+    COLOUR_PALETTE.forEach((col) => {
+      const sw = document.createElement('button');
+      sw.type = 'button';
+      sw.className = 'colour-swatch' + (col === slot.colour ? ' colour-swatch--active' : '');
+      sw.style.background = col;
+      sw.setAttribute('aria-label', col);
+      sw.addEventListener('click', () => {
+        slot.colour = col;
+        slot.paletteOpen = false;
+        render();
+      });
+      palette.appendChild(sw);
+    });
+    return palette;
+  }
+
   function renderEmptyCard(idx: number): HTMLDivElement {
     const card = document.createElement('button');
     card.type = 'button';
@@ -164,6 +207,7 @@ export function mountSetup(container: HTMLElement, onStart: (choice: GameChoice)
       slots[idx].enabled = true;
       slots[idx].isAi = false;
       slots[idx].name = fi.defaultPlayerNames[idx];
+      slots[idx].colour = PLAYER_COLOURS[idx];
       render();
     });
 
