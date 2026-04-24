@@ -16,16 +16,28 @@ export type GameState = {
   winner: Player | null;
 };
 
-export type PlayerConfig = { name: string; isAi: boolean };
+export type PlayerConfig = { name: string; isAi: boolean; colour: string };
 export type GameChoice = { players: PlayerConfig[] };
 
-export const PLAYER_COLOURS = ['#e03a3a', '#2b78e6', '#4aa53a', '#f2c832'] as const;
+// Order matches defaultPlayerNames: Anna yellow, Aino purple, Markus blue, Sonja red.
+export const PLAYER_COLOURS = ['#f2c832', '#7c4fbd', '#2b78e6', '#e03a3a'] as const;
+
+export const COLOUR_PALETTE = [
+  '#e03a3a', // red
+  '#2b78e6', // blue
+  '#4aa53a', // green
+  '#f2c832', // yellow
+  '#e066c3', // pink
+  '#7c4fbd', // purple
+  '#f58f3a', // orange
+  '#34c8b8', // teal
+] as const;
 
 export function newGame(choice: GameChoice): GameState {
   const players: Player[] = choice.players.map((p, id) => ({
     id,
     name: p.name,
-    colour: PLAYER_COLOURS[id],
+    colour: p.colour,
     isCpu: p.isAi,
     position: 0,
   }));
