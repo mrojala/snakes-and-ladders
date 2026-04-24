@@ -6,7 +6,7 @@ const app = document.getElementById('app');
 if (!app) throw new Error('#app root element not found');
 
 function showSetup(): void {
-  mountSetup(app!, (n) => mountGame(app!, n));
+  mountSetup(app!, (choice) => mountGame(app!, choice, showSetup));
 }
 
 showSetup();

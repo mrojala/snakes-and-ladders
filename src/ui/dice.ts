@@ -24,8 +24,10 @@ export function createDice(): Dice {
       setFace(el, n);
     },
     async animate(finalValue) {
-      const frameMs = 70;
-      const totalMs = 600;
+      const fast = new URLSearchParams(location.search).has('fast');
+      const frameMs = fast ? 30 : 70;
+      const totalMs = fast ? 180 : 600;
+      const popMs = fast ? 100 : 260;
       const frames = Math.floor(totalMs / frameMs);
       el.classList.add('dice-rolling');
       for (let i = 0; i < frames; i++) {
@@ -35,7 +37,7 @@ export function createDice(): Dice {
       setFace(el, finalValue);
       el.classList.remove('dice-rolling');
       el.classList.add('dice-pop');
-      await wait(260);
+      await wait(popMs);
       el.classList.remove('dice-pop');
     },
   };
