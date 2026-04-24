@@ -13,11 +13,13 @@ export type TokensLayer = {
   setName: (playerId: number, name: string) => void;
 };
 
+type TokenEntry = { root: HTMLDivElement; label: HTMLSpanElement; position: number };
+
 export function createTokensLayer(specs: readonly TokenSpec[]): TokensLayer {
   const layer = document.createElement('div');
   layer.className = 'tokens-layer';
 
-  const tokens: Array<{ root: HTMLDivElement; label: HTMLSpanElement }> = specs.map((spec, id) => {
+  const tokens: TokenEntry[] = specs.map((spec, id) => {
     const root = document.createElement('div');
     root.className = 'token';
     root.style.setProperty('--token-colour', spec.colour);
@@ -31,30 +33,31 @@ export function createTokensLayer(specs: readonly TokenSpec[]): TokensLayer {
     root.appendChild(label);
 
     layer.appendChild(root);
-    return { root, label };
+    return { root, label, position: 0 };
   });
 
+  // Players that haven't rolled yet (position 0) are simply hidden — they
+  // only appear once they enter square 1. Keeps the board uncluttered.
   function placeAt(playerId: number, position: number): void {
-    const { root } = tokens[playerId];
+    const token = tokens[playerId];
+    token.position = position;
+    const { root } = token;
     if (position === 0) {
-      // Cluster in the left half of the area below the board.
-      const slots = specs.length;
-      const slotWidth = 48 / Math.max(slots, 1);
-      root.style.left = `${4 + playerId * slotWidth + slotWidth / 2}%`;
-      root.style.top = `106%`;
-      root.style.setProperty('--offset-x', `0px`);
-      root.style.setProperty('--offset-y', `0px`);
-    } else {
-      const { xPct, yPct } = boardPercent(position);
-      root.style.left = `${xPct}%`;
-      root.style.top = `${yPct}%`;
-      const { dx, dy } = clusterOffset(playerId, specs.length);
-      root.style.setProperty('--offset-x', `${dx}px`);
-      root.style.setProperty('--offset-y', `${dy}px`);
+      root.style.display = 'none';
+      return;
     }
-    // Re-append so the most recently moved token is the last DOM child,
-    // which puts it on top when multiple tokens share a square.
-    layer.appendChild(root);
+    root.style.display = '';
+    const { xPct, yPct } = boardPercent(position);
+    root.style.left = `${xPct}%`;
+    root.style.top = `${yPct}%`;
+    const { dx, dy } = clusterOffset(playerId, specs.length);
+    root.style.setProperty('--offset-x', `${dx}px`);
+    root.style.setProperty('--offset-y', `${dy}px`);
+    raiseToTop(playerId);
+  }
+
+  function raiseToTop(playerId: number): void {
+    layer.appendChild(tokens[playerId].root);
   }
 
   async function animatePath(playerId: number, path: number[], stepMs = 180): Promise<void> {
@@ -76,6 +79,7 @@ export function createTokensLayer(specs: readonly TokenSpec[]): TokensLayer {
     tokens.forEach(({ root }, id) => {
       root.classList.toggle('token--active', id === playerId);
     });
+    if (playerId !== null) raiseToTop(playerId);
   }
 
   function setName(playerId: number, name: string): void {

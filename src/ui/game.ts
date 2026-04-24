@@ -47,9 +47,10 @@ export function mountGame(container: HTMLElement, choice: GameChoice, onRestart:
   const hud = createHud(() => {
     if (!busy && !ended) void takeTurn();
   });
+  boardFrame.appendChild(hud.element);
 
   boardColumn.append(title, boardFrame);
-  body.append(boardColumn, hud.element);
+  body.append(boardColumn);
   wrapper.append(body);
   container.appendChild(wrapper);
 

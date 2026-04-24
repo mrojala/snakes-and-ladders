@@ -40,9 +40,9 @@ export function createHud(onRoll: () => void): Hud {
 
   const row = document.createElement('div');
   row.className = 'hud-row';
-  row.append(turn, dice.element);
+  row.append(turn, dice.element, rollBtn);
 
-  el.append(row, rollBtn, message);
+  el.append(row, message);
 
   return {
     element: el,

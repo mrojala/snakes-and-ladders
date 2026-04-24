@@ -289,12 +289,14 @@ button {
 
 .board-frame {
   position: relative;
-  padding-bottom: 11%;
+  /* Leaves room below the board for the start-zone queue (left) and the
+     HUD (centered). Using % so it scales with board width; 14% of board
+     width ≈ one row's worth of space. */
+  padding-bottom: 14%;
   width: 100%;
-  /* Cap the board width so title + board + gap + HUD fit in the viewport
-     height without a scrollbar. Board-frame height is ~1.11 × its width
-     because of padding-bottom:11%, so width ≤ (100vh − overhead) / 1.11. */
-  max-width: calc((100vh - 200px) / 1.11);
+  /* Cap the board width so title + board + padding fit the viewport height
+     without a scrollbar. Board-frame height is ~1.14 × its width. */
+  max-width: calc((100vh - 90px) / 1.14);
   margin-left: auto;
   margin-right: auto;
 }
@@ -472,37 +474,36 @@ button {
 /* ---------- HUD ---------- */
 
 .hud {
-  width: 280px;
-  max-width: 100%;
-  align-self: flex-end;          /* dice + roll bottom-right of the column */
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: #262626;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 2px;
+  padding: 0;
 }
 
 .hud-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .turn-badge {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .turn-pawn {
-  width: 52px;
-  height: 68px;
+  width: 42px;
+  height: 56px;
+  flex-shrink: 0;
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
 }
 
@@ -512,8 +513,8 @@ button {
 }
 
 .turn-name {
-  padding: 2px 8px;
-  font-size: 13px;
+  padding: 2px 7px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   background: rgba(20, 20, 20, 0.88);
@@ -525,10 +526,11 @@ button {
 
 .dice {
   position: relative;
-  width: 82px;
-  height: 82px;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
   background: #fafafa;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow:
     inset 0 -4px 6px rgba(0, 0, 0, 0.08),
     0 3px 7px rgba(0, 0, 0, 0.45);
@@ -553,22 +555,24 @@ button {
 
 .dice-dot {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   background: #1a1a1a;
   border-radius: 50%;
   transform: translate(-50%, -50%);
 }
 
 .roll-button {
-  padding: 14px 18px;
-  font-size: 18px;
+  padding: 10px 14px;
+  font-size: 15px;
   font-weight: 600;
   background: #f0e0a0;
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .roll-button:hover:not(:disabled) {
@@ -581,11 +585,11 @@ button {
 }
 
 .hud-message {
-  min-height: 20px;
+  min-height: 16px;
   color: #f0e0a0;
   font-style: italic;
   text-align: center;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 /* ---------- Win screen ---------- */
