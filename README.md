@@ -2,6 +2,10 @@
 
 A local, browser-based Snakes and Ladders game in Finnish, built to match the family's physical board so the kids can play the same game on a screen when the real one isn't handy.
 
+## Play
+
+Live at **https://mrojala.github.io/snakes-and-ladders/** — deployed from `main` via GitHub Pages.
+
 ## Reference — the physical board
 
 The digital board mirrors the colours, numbering, and snake/ladder layout of this physical copy:
