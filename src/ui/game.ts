@@ -1,5 +1,5 @@
 import { createBoard } from '../board/view';
-import { applyRoll, rollDie } from '../game/rules';
+import { applyRoll, FINISH, rollDie } from '../game/rules';
 import { newGame, type GameChoice, type GameState } from '../game/state';
 import { fi } from '../i18n';
 import { createHud } from './hud';
@@ -13,7 +13,7 @@ const fast = new URLSearchParams(location.search).has('fast');
 const STEP_MS = fast ? 40 : 180;
 const GLIDE_MS = fast ? 160 : 600;
 const CPU_THINK_MS = fast ? 120 : 700;
-const TOO_HIGH_MS = fast ? 250 : 900;
+const BOUNCE_PAUSE_MS = fast ? 120 : 260;
 const LANDED_MSG_MS = fast ? 250 : 700;
 
 export function mountGame(container: HTMLElement, choice: GameChoice, onRestart: () => void): void {
@@ -72,9 +72,16 @@ export function mountGame(container: HTMLElement, choice: GameChoice, onRestart:
         const path: number[] = [];
         for (let p = ev.from + 1; p <= ev.to; p++) path.push(p);
         await tokens.animatePath(ev.playerId, path, STEP_MS);
-      } else if (ev.type === 'stayed') {
-        hud.showMessage(fi.tooHigh);
-        await wait(TOO_HIGH_MS);
+      } else if (ev.type === 'bounced') {
+        const forward: number[] = [];
+        for (let p = ev.from + 1; p <= FINISH; p++) forward.push(p);
+        const backward: number[] = [];
+        for (let p = FINISH - 1; p >= ev.to; p--) backward.push(p);
+        await tokens.animatePath(ev.playerId, forward, STEP_MS);
+        hud.showMessage(fi.bouncedBack);
+        await wait(BOUNCE_PAUSE_MS);
+        await tokens.animatePath(ev.playerId, backward, STEP_MS);
+        await wait(LANDED_MSG_MS);
         hud.showMessage(null);
       } else if (ev.type === 'slid') {
         hud.showMessage(fi.snakeLanded);

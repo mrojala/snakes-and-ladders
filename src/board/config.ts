@@ -18,7 +18,6 @@ export const LADDERS: ReadonlyArray<Ladder> = [
   { base: 9,  top: 31  },
   { base: 21, top: 42  },
   { base: 28, top: 84  },
-  { base: 36, top: 55  },
   { base: 51, top: 67  },
   { base: 71, top: 91  },
   { base: 80, top: 100 },
