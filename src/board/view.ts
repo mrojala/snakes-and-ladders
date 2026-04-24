@@ -3,28 +3,15 @@ import { LADDERS, ROW_COLOURS, SNAKES } from './config';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-export function mountBoard(container: HTMLElement): void {
-  container.innerHTML = '';
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'board-wrapper';
-
-  const title = document.createElement('h1');
-  title.className = 'title';
-  title.textContent = 'Käärmeet ja tikapuut';
-
+export function createBoard(): HTMLDivElement {
   const boardEl = document.createElement('div');
   boardEl.className = 'board';
 
   for (let n = 1; n <= BOARD_SIZE * BOARD_SIZE; n++) {
     boardEl.appendChild(makeCell(n));
   }
-
   boardEl.appendChild(renderOverlay());
-
-  wrapper.appendChild(title);
-  wrapper.appendChild(boardEl);
-  container.appendChild(wrapper);
+  return boardEl;
 }
 
 function makeCell(n: number): HTMLDivElement {
