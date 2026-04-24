@@ -15,8 +15,9 @@ export const SNAKES: ReadonlyArray<Snake> = [
   // Big winder from top-right down across the middle to the bottom-left.
   { head: 87, tail: 24, colour: '#1a2048', path: [87, 76, 66, 55, 46, 37, 25, 24] },
   { head: 64, tail: 60, colour: '#d94a2e', path: [64, 63, 62, 59, 60] },
-  // Long pink snake winding down the left side.
-  { head: 62, tail: 19, colour: '#d65a8a', path: [62, 43, 38, 22, 18, 19] },
+  // Long pink snake winding down. Routes through col 2 to stay off the
+  // 21→42 ladder, tucking back in to 19 only at the very end.
+  { head: 62, tail: 19, colour: '#d65a8a', path: [62, 53, 43, 38, 23, 18, 19] },
   { head: 54, tail: 34, colour: '#b88f5a', path: [54, 47, 34] },
   { head: 17, tail: 7,  colour: '#4a7a3a', path: [17, 16, 15, 6, 7] },
 ];
