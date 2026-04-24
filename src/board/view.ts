@@ -39,9 +39,83 @@ function renderOverlay(): SVGSVGElement {
     svg.appendChild(renderLadder(ladder.base, ladder.top));
   }
   SNAKES.forEach((snake, i) => {
-    svg.appendChild(renderSnake(snake.head, snake.tail, snake.colour, i));
+    svg.appendChild(renderSnake(snake.head, snake.tail, snake.colour, i, snake.path));
   });
   return svg;
+}
+
+type Pt = { x: number; y: number };
+
+// Smooth curve through waypoints using chained quadratic beziers with midpoint
+// endpoints. Guarantees tangent continuity between segments.
+function smoothPath(pts: readonly Pt[]): string {
+  if (pts.length === 0) return '';
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  if (pts.length === 1) return d;
+  if (pts.length === 2) return `${d} L ${pts[1].x} ${pts[1].y}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const ctrl = pts[i];
+    const next = pts[i + 1];
+    const endX = (ctrl.x + next.x) / 2;
+    const endY = (ctrl.y + next.y) / 2;
+    d += ` Q ${ctrl.x} ${ctrl.y} ${endX} ${endY}`;
+  }
+  const last = pts[pts.length - 1];
+  return `${d} L ${last.x} ${last.y}`;
+}
+
+// Walk the polyline at a fixed arc-length spacing, returning sample points
+// and their local tangents. Used for placing cross-stripes on the body.
+function sampleAtSpacing(pts: readonly Pt[], spacing: number): Array<{ p: Pt; tx: number; ty: number }> {
+  const out: Array<{ p: Pt; tx: number; ty: number }> = [];
+  let remaining = spacing;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy);
+    if (len === 0) continue;
+    const dirX = dx / len;
+    const dirY = dy / len;
+    let pos = 0;
+    while (pos + remaining <= len) {
+      pos += remaining;
+      out.push({
+        p: { x: a.x + dirX * pos, y: a.y + dirY * pos },
+        tx: dirX,
+        ty: dirY,
+      });
+      remaining = spacing;
+    }
+    remaining -= len - pos;
+  }
+  return out;
+}
+
+// Fallback sinusoidal waypoints when a snake has no explicit path.
+function sinusoidalWaypoints(head: Pt, tail: Pt): Pt[] {
+  const dx = tail.x - head.x;
+  const dy = tail.y - head.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  const twists = Math.max(2, Math.round(len / 80));
+  const amplitude = Math.min(54, len * 0.2);
+  const samples = Math.max(10, twists * 4);
+  const pts: Pt[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const s = i / samples;
+    const along = s * len;
+    const off = amplitude * Math.sin(s * twists * Math.PI);
+    pts.push({
+      x: head.x + ux * along + px * off,
+      y: head.y + uy * along + py * off,
+    });
+  }
+  return pts;
 }
 
 function renderLadder(baseSquare: number, topSquare: number): SVGGElement {
@@ -105,43 +179,21 @@ function renderSnake(
   tailSquare: number,
   colour: string,
   index: number,
+  pathSquares?: readonly number[],
 ): SVGGElement {
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('class', 'snake');
 
-  const h = pixelCentre(headSquare);
-  const t = pixelCentre(tailSquare);
+  const head = pixelCentre(headSquare);
+  const tail = pixelCentre(tailSquare);
 
-  const dx = t.x - h.x;
-  const dy = t.y - h.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const ux = dx / len;
-  const uy = dy / len;
-  const px = -uy;
-  const py = ux;
+  const waypoints: Pt[] =
+    pathSquares && pathSquares.length >= 2
+      ? pathSquares.map((n) => pixelCentre(n))
+      : sinusoidalWaypoints(head, tail);
 
-  // Sinusoidal path: more twists and more amplitude for longer snakes.
-  const twists = Math.max(2, Math.round(len / 80));
-  const amplitude = Math.min(54, len * 0.2);
-  const samples = Math.max(40, twists * 22);
+  const d = smoothPath(waypoints);
 
-  let d = `M ${h.x} ${h.y}`;
-  let firstStepX = h.x;
-  let firstStepY = h.y;
-  for (let i = 1; i <= samples; i++) {
-    const s = i / samples;
-    const along = s * len;
-    const off = amplitude * Math.sin(s * twists * Math.PI);
-    const x = h.x + ux * along + px * off;
-    const y = h.y + uy * along + py * off;
-    d += ` L ${x} ${y}`;
-    if (i === 1) {
-      firstStepX = x;
-      firstStepY = y;
-    }
-  }
-
-  // Dark outer outline for depth.
   const bodyOutline = document.createElementNS(SVG_NS, 'path');
   bodyOutline.setAttribute('d', d);
   bodyOutline.setAttribute('class', 'snake-outline');
@@ -153,59 +205,48 @@ function renderSnake(
   body.setAttribute('stroke', colour);
   g.appendChild(body);
 
+  // Cross-stripes distributed along the polyline at regular arc-length intervals.
   const pattern = STRIPE_PATTERNS[index % STRIPE_PATTERNS.length];
-  const bandCount = Math.max(3, Math.floor(len / pattern.spacing));
-  for (let i = 1; i < bandCount; i++) {
-    const s = i / bandCount;
-    const along = s * len;
-    const off = amplitude * Math.sin(s * twists * Math.PI);
-    const bx = h.x + ux * along + px * off;
-    const by = h.y + uy * along + py * off;
-
-    // Tangent via finite difference along the parametric curve.
-    const nextS = Math.min(1, s + 0.005);
-    const nextAlong = nextS * len;
-    const nextOff = amplitude * Math.sin(nextS * twists * Math.PI);
-    const tx = h.x + ux * nextAlong + px * nextOff - bx;
-    const ty = h.y + uy * nextAlong + py * nextOff - by;
-    const tlen = Math.hypot(tx, ty) || 1;
-    const bandPerpX = -ty / tlen;
-    const bandPerpY = tx / tlen;
-
+  for (const s of sampleAtSpacing(waypoints, pattern.spacing)) {
+    const perpX = -s.ty;
+    const perpY = s.tx;
     const stripe = document.createElementNS(SVG_NS, 'line');
-    stripe.setAttribute('x1', String(bx + bandPerpX * pattern.halfBand));
-    stripe.setAttribute('y1', String(by + bandPerpY * pattern.halfBand));
-    stripe.setAttribute('x2', String(bx - bandPerpX * pattern.halfBand));
-    stripe.setAttribute('y2', String(by - bandPerpY * pattern.halfBand));
+    stripe.setAttribute('x1', String(s.p.x + perpX * pattern.halfBand));
+    stripe.setAttribute('y1', String(s.p.y + perpY * pattern.halfBand));
+    stripe.setAttribute('x2', String(s.p.x - perpX * pattern.halfBand));
+    stripe.setAttribute('y2', String(s.p.y - perpY * pattern.halfBand));
     stripe.setAttribute('class', 'snake-stripe');
     stripe.setAttribute('stroke', pattern.colour);
     stripe.setAttribute('stroke-width', String(pattern.width));
     g.appendChild(stripe);
   }
 
-  // Tangent at head, from head toward the first sampled point on the body.
-  const bodyDx = firstStepX - h.x;
-  const bodyDy = firstStepY - h.y;
+  // Head orientation from the first segment's tangent.
+  const firstNext = waypoints[1] ?? tail;
+  const bodyDx = firstNext.x - head.x;
+  const bodyDy = firstNext.y - head.y;
   const bodyLen = Math.hypot(bodyDx, bodyDy) || 1;
   const bodyDirX = bodyDx / bodyLen;
   const bodyDirY = bodyDy / bodyLen;
   const tongueDx = -bodyDirX;
   const tongueDy = -bodyDirY;
+  const perpX = -bodyDirY;
+  const perpY = bodyDirX;
   const headAngle = (Math.atan2(bodyDirY, bodyDirX) * 180) / Math.PI;
 
-  const head = document.createElementNS(SVG_NS, 'ellipse');
-  head.setAttribute('cx', String(h.x));
-  head.setAttribute('cy', String(h.y));
-  head.setAttribute('rx', '22');
-  head.setAttribute('ry', '15');
-  head.setAttribute('class', 'snake-head');
-  head.setAttribute('fill', colour);
-  head.setAttribute('transform', `rotate(${headAngle} ${h.x} ${h.y})`);
-  g.appendChild(head);
+  const headEl = document.createElementNS(SVG_NS, 'ellipse');
+  headEl.setAttribute('cx', String(head.x));
+  headEl.setAttribute('cy', String(head.y));
+  headEl.setAttribute('rx', '22');
+  headEl.setAttribute('ry', '15');
+  headEl.setAttribute('class', 'snake-head');
+  headEl.setAttribute('fill', colour);
+  headEl.setAttribute('transform', `rotate(${headAngle} ${head.x} ${head.y})`);
+  g.appendChild(headEl);
 
-  // Forked tongue extending out the front of the head.
-  const tongueBase = { x: h.x + tongueDx * 20, y: h.y + tongueDy * 20 };
-  const tongueFork = { x: h.x + tongueDx * 30, y: h.y + tongueDy * 30 };
+  // Forked tongue out the front of the head.
+  const tongueBase = { x: head.x + tongueDx * 20, y: head.y + tongueDy * 20 };
+  const tongueFork = { x: head.x + tongueDx * 30, y: head.y + tongueDy * 30 };
   const forkAngle = Math.PI / 5;
   const cosA = Math.cos(forkAngle);
   const sinA = Math.sin(forkAngle);
@@ -225,10 +266,10 @@ function renderSnake(
   tongue.setAttribute('class', 'snake-tongue');
   g.appendChild(tongue);
 
-  // Eyes sit on the forehead — offset a little toward the tongue side and off-axis.
+  // Eyes on the forehead.
   for (const side of [-1, 1]) {
-    const ex = h.x + tongueDx * 6 + px * side * 6;
-    const ey = h.y + tongueDy * 6 + py * side * 6;
+    const ex = head.x + tongueDx * 6 + perpX * side * 6;
+    const ey = head.y + tongueDy * 6 + perpY * side * 6;
     const eye = document.createElementNS(SVG_NS, 'circle');
     eye.setAttribute('cx', String(ex));
     eye.setAttribute('cy', String(ey));
