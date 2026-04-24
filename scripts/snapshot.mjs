@@ -12,8 +12,11 @@ import { chromium } from 'playwright';
 
 const [, , url = 'http://localhost:5199/', out = 'tmp-snapshot.png', ...actions] = process.argv;
 
+const viewportWidth = Number(process.env.VIEW_W ?? 1200);
+const viewportHeight = Number(process.env.VIEW_H ?? 1400);
+
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1200, height: 1400 } });
+const page = await browser.newPage({ viewport: { width: viewportWidth, height: viewportHeight } });
 await page.goto(url);
 
 for (const action of actions) {

@@ -60,6 +60,7 @@ export function mountGame(container: HTMLElement, choice: GameChoice, onRestart:
     busy = true;
     hud.showMessage(null);
     hud.update(state.players[state.currentPlayerIndex], false);
+    tokens.setActive(null);
 
     const roll = rollDie();
     await hud.animateDice(roll);
@@ -94,6 +95,7 @@ export function mountGame(container: HTMLElement, choice: GameChoice, onRestart:
     if (state.phase === 'won' && state.winner) {
       ended = true;
       hud.update(state.winner, false);
+      tokens.setActive(state.winner.id);
       const overlay = createWinOverlay(state.winner, onRestart);
       wrapper.appendChild(overlay);
       return;
@@ -107,6 +109,7 @@ export function mountGame(container: HTMLElement, choice: GameChoice, onRestart:
     const current = state.players[state.currentPlayerIndex];
     hud.update(current, !current.isCpu);
     if (state.lastRoll !== null) hud.setDice(state.lastRoll);
+    tokens.setActive(current.id);
   }
 
   function scheduleCpuIfNeeded(): void {
