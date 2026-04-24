@@ -3,10 +3,12 @@ import type { GameState } from './state';
 
 export type MoveEvent =
   | { type: 'stepped'; playerId: number; from: number; to: number }
-  | { type: 'stayed'; playerId: number }
+  | { type: 'bounced'; playerId: number; from: number; to: number }
   | { type: 'slid'; playerId: number; from: number; to: number }
   | { type: 'climbed'; playerId: number; from: number; to: number }
   | { type: 'won'; playerId: number };
+
+export const FINISH = 100;
 
 export function rollDie(): number {
   return Math.floor(Math.random() * 6) + 1;
@@ -22,33 +24,35 @@ export function applyRoll(state: GameState, roll: number): {
   const from = current.position;
   const target = from + roll;
   const events: MoveEvent[] = [];
-  let finalPos = from;
+  let finalPos: number;
 
-  if (target > 100) {
-    events.push({ type: 'stayed', playerId: current.id });
+  if (target > FINISH) {
+    // Bounce back from 100: overshoot by k means land at (100 − k) = (200 − target).
+    finalPos = 2 * FINISH - target;
+    events.push({ type: 'bounced', playerId: current.id, from, to: finalPos });
   } else {
     finalPos = target;
     events.push({ type: 'stepped', playerId: current.id, from, to: finalPos });
+  }
 
-    const snake = SNAKES.find((s) => s.head === finalPos);
-    const ladder = LADDERS.find((l) => l.base === finalPos);
-    if (snake) {
-      events.push({ type: 'slid', playerId: current.id, from: finalPos, to: snake.tail });
-      finalPos = snake.tail;
-    } else if (ladder) {
-      events.push({ type: 'climbed', playerId: current.id, from: finalPos, to: ladder.top });
-      finalPos = ladder.top;
-    }
+  const snake = SNAKES.find((s) => s.head === finalPos);
+  const ladder = LADDERS.find((l) => l.base === finalPos);
+  if (snake) {
+    events.push({ type: 'slid', playerId: current.id, from: finalPos, to: snake.tail });
+    finalPos = snake.tail;
+  } else if (ladder) {
+    events.push({ type: 'climbed', playerId: current.id, from: finalPos, to: ladder.top });
+    finalPos = ladder.top;
+  }
 
-    if (finalPos === 100) {
-      events.push({ type: 'won', playerId: current.id });
-    }
+  if (finalPos === FINISH) {
+    events.push({ type: 'won', playerId: current.id });
   }
 
   const players = state.players.map((p) =>
     p.id === current.id ? { ...p, position: finalPos } : p,
   );
-  const hasWon = finalPos === 100;
+  const hasWon = finalPos === FINISH;
   const winner = hasWon ? players.find((p) => p.id === current.id) ?? null : null;
 
   return {
